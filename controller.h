@@ -43,6 +43,7 @@ private:
     QTimer timer_playerShootCheck;
     QTimer timer_playerShootEnable;
     QTimer timer_enemiesShoot;
+    QTimer timer_checkOver;
     //prologue
     int cnt_prologue;
     QImage img_prologue{":/pic/select_player.jpg"};
@@ -55,6 +56,9 @@ private:
     Map map;
     Player p0{ePlayer::P0,size()};
     Player p1{ePlayer::P1,size()};
+    bool win,over;
+    const int totalEnemies=10;
+    int deadEnemies;
         //control player
     int P0lives,P1lives;
     bool P0MoveUp,P0MoveDown,P0MoveLeft,P0MoveRight;
@@ -67,7 +71,7 @@ private:
     QList<Enemy> enemies;
 
 /***************
-   private func
+   private func*
 ****************/
 private:
     void init_newGame();
@@ -76,6 +80,8 @@ private:
     bool Player_Map_collisionCheck(eDirection d,ePlayer p);
     bool Enemy_Map_collisionCheck(eDirection d,const Enemy& e);
     void dealCollisionWithBlts();
+    void playerDead(ePlayer p);
+    void timerout_checkOver();
 private slots:
     void timerout_draw();
     void timerout_move();

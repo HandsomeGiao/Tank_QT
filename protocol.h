@@ -9,11 +9,13 @@
     5 石头
 */
 
+//e开头然后一个大写字母的变量均为枚举变量
+
 enum eState{
     prologue,
     select,
     showLevel,       //显示进入某一关卡的过渡画面
-    gamePlay         //正式开始
+    gamePlay        //正式开始
 };
 
 enum eRstSelect{

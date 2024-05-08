@@ -15,6 +15,7 @@ public:
     QRect getRect()const;
     void draw(QPainter& qpt);
     void setWs(QSize s);
+    eKind getKind()const;
 private:
     void loadImg();
 private:

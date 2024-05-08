@@ -2,6 +2,7 @@
 #include<QPainter>
 #include<QKeyEvent>
 #include<QRandomGenerator>
+#include<QMessageBox>
 
 Controller::Controller(QWidget *parent)
     : QWidget(parent)
@@ -15,6 +16,8 @@ Controller::Controller(QWidget *parent)
     connect(&timer_playerShootCheck,&QTimer::timeout,this,&Controller::timerout_playerShoot);
     connect(&timer_playerShootEnable,&QTimer::timeout,this,&Controller::timerout_rstShoot);
     connect(&timer_enemiesShoot,&QTimer::timeout,this,&Controller::timerout_enemiesShoot);
+    connect(&timer_checkOver,&QTimer::timeout,this,&Controller::timerout_checkOver);
+
     init_newGame();
 }
 
@@ -198,7 +201,6 @@ void Controller::paintEvent(QPaintEvent *event)
     }
     case eState::gamePlay:{
         QPainter qpt(this);
-        map.drawMap(width(),height(),&qpt);
         if(p1.alive())
             p1.draw(qpt);
         if(p0.alive())
@@ -207,6 +209,7 @@ void Controller::paintEvent(QPaintEvent *event)
             blt.draw(qpt);
         for(auto&e:enemies)
             e.draw(qpt);
+        map.drawMap(width(),height(),&qpt);
         break;
     }
     }
@@ -328,6 +331,7 @@ void Controller::timerout_move()
     for(auto& blt:bullets)
         blt.move();
 
+    //enemies AI
     for(auto& enemy:enemies){
         //没有撞就一直沿着这个方向前进
         if(!enemy.checkLastCollision()){
@@ -379,7 +383,7 @@ void Controller::timerout_addTank()
     if(P1lives>0 && !p1.alive())
         p1.revive();
 
-    if(enemies.size()<2){
+    if(enemies.size()+deadEnemies<totalEnemies && enemies.size()<5){
         //lv 1~4
         int lv=QRandomGenerator::global()->bounded(4)+1;
         int pos=QRandomGenerator::global()->bounded(3);
@@ -435,6 +439,10 @@ void Controller::init_moveState()
 
 void Controller::init_newLv(int lv)
 {
+    win=true;
+    over=false;
+    deadEnemies=0;
+
     level=lv;
     state=eState::showLevel;
     showLevelCnt=0;
@@ -450,11 +458,12 @@ void Controller::init_newLv(int lv)
     }
     init_moveState();
 
-    timer_addTank.start(500);
+    timer_addTank.start(1000);
     timer_move.start(33);
-    timer_playerShootCheck.start(200);
+    timer_playerShootCheck.start(50);
     timer_playerShootEnable.start(1000);
     timer_enemiesShoot.start(2000);
+    timer_checkOver.start(2000);
 }
 
 //会碰撞返回true
@@ -513,11 +522,10 @@ bool Controller::Enemy_Map_collisionCheck(eDirection d, const Enemy &e)
 
 void Controller::dealCollisionWithBlts()
 {
-    //blts with map
     QByteArray& tmap=map.getPixelMap_modifiable();
     bullets.removeIf([&](const Bullet& blt){
         QRect trect = blt.getRect();
-        //检测边界
+        //blts with map
         QRect biggestRect;
         biggestRect.setSize(QSize(52,52));
         biggestRect.moveTopLeft(QPoint(0,0));
@@ -532,6 +540,72 @@ void Controller::dealCollisionWithBlts()
                     collision=true;
                 }
             }
+
+        // blts with enemies
+        if(blt.getKind() != eKind::enemy){
+            enemies.removeIf([&](const Enemy& e){
+                if(e.getRect().intersects(blt.getRect())){
+                    collision=true;
+                    ++deadEnemies;
+                    if(deadEnemies>=totalEnemies){
+                        win=true;
+                        over=true;
+                    }
+                    return true;
+                }
+                return false;
+            });
+        }
+        //blts with player
+        else{
+            if(p0.alive() && p0.getRect().intersects(blt.getRect())){
+                playerDead(ePlayer::P0);
+            }
+            if(p1.alive() && p1.getRect().intersects(blt.getRect())){
+                playerDead(ePlayer::P1);
+            }
+        }
+
         return collision;
     });
+
+    //blts with enemies
+
+    //blts with player
+
+}
+
+void Controller::playerDead(ePlayer p)
+{
+    if(p == ePlayer::P0){
+        --P0lives;
+        p0.dead();
+    }else if(p == ePlayer::P1){
+        --P1lives;
+        p1.dead();
+    }
+    if(!P0lives && !P1lives){
+        win=false;
+        over=true;
+    }
+}
+
+void Controller::timerout_checkOver()
+{
+    if(!over)
+        return;
+    //重置位置
+    p0.dead();
+    p1.dead();
+    if(win){
+        if(level>35){
+            QMessageBox::information(this,"Tank","恭喜你通关游戏");
+            init_newGame();
+        }else{
+            init_newLv(level+1);
+        }
+    }else{
+        QMessageBox::information(this,"Tank","GameOver!");
+        init_newGame();
+    }
 }

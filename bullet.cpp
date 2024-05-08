@@ -74,6 +74,11 @@ void Bullet::setWs(QSize s)
     pixelPos.ry()=rect.top()*usizeH;
 }
 
+eKind Bullet::getKind() const
+{
+    return kind;
+}
+
 void Bullet::loadImg()
 {
     qDebug()<<"load img";

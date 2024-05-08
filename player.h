@@ -20,10 +20,13 @@ public:
     void draw(QPainter &qpt);
     void revive();
     bool alive()const;
+    void dead();
     QRect getRectMoved(eDirection d)const;
     void setDir(eDirection d);
     eDirection getDir()const;
     QRect getRect()const;
+    void rstPos();
+
 private:
     ePlayer player;
     QImage imgUp_0,imgUp_1;
@@ -44,7 +47,6 @@ private:
 
 private:
     void loadImg();
-    void rstPos();
 
 };
 

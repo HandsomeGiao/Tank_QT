@@ -155,6 +155,11 @@ bool Player::alive() const
     return isAlive;
 }
 
+void Player::dead()
+{
+    isAlive=false;
+}
+
 QRect Player::getRectMoved(eDirection d)const
 {
     QRect trect;
